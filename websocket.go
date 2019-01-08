@@ -156,8 +156,9 @@ func NewWebSocket(id string, w http.ResponseWriter, r *http.Request) (client *Cl
 	}
 
 	client = &Client{
-		conn: conn,
-		ID:   id,
+		conn:   conn,
+		ID:     id,
+		cancel: make(chan int, 1),
 	}
 
 	aliveList.Register(client)
@@ -187,6 +188,8 @@ func (cli *Client) SendMessage(messageType int, message string) error {
 	err := cli.conn.WriteJSON(msg)
 	if err != nil {
 		log.Println("sendMessageError :", err)
+		log.Println("message: ", msg)
+		log.Println("cli: ", cli)
 		cli.Close()
 	}
 	return err
@@ -205,7 +208,7 @@ func (cli *Client) Close() {
 
 // HeartBeat 服务端检测链接是否正常
 func (cli *Client) HeartBeat() {
-	ticker := time.NewTicker(time.Second * 50)
+	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
 	for {
@@ -213,6 +216,8 @@ func (cli *Client) HeartBeat() {
 		case <-ticker.C:
 			cli.SendMessage(HeartBeatMessage, "heart beat")
 		case <-cli.cancel:
+			log.Println("即将关闭定时器", cli)
+			close(cli.cancel)
 			return
 		}
 	}
