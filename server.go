@@ -43,10 +43,8 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 	checkErr(err)
 	defer client.Close()
 
-	welcome := fmt.Sprintf(" %s 上线", id)
-	client.Broadcast([]byte(welcome))
 	welcome2 := fmt.Sprintf("欢迎 %s", id)
-	client.SendMessage(1, []byte(welcome2))
+	client.SendMessage(1, welcome2)
 
 	go client.HeartBeat()
 
@@ -61,7 +59,7 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 			log.Println("error:", err)
 			return
 		}
-		client.Broadcast(message)
+		client.Broadcast(string(message))
 	}
 
 }

@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
@@ -8,12 +9,25 @@ import (
 	"time"
 )
 
+const (
+	// SystemMessage 系统消息
+	SystemMessage = iota
+	// BroadcastMessage 广播消息(正常的消息)
+	BroadcastMessage
+	// HeartBeatMessage 心跳消息
+	HeartBeatMessage
+	// ConnectedMessage 上线通知
+	ConnectedMessage
+	// DisconnectedMessage 下线通知
+	DisconnectedMessage
+)
+
 var aliveList *AliveList
 var upgrader = websocket.Upgrader{}
 
 // AliveList 当前在线列表
 type AliveList struct {
-	ConnList  map[string]*websocket.Conn
+	ConnList  map[string]*Client
 	register  chan *Client
 	destroy   chan *Client
 	broadcast chan Message
@@ -31,7 +45,9 @@ type Client struct {
 // Message 消息体结构
 type Message struct {
 	ID      string
-	Content []byte
+	Content string
+	SentAt  int64
+	Type    int
 }
 
 func init() {
@@ -47,7 +63,7 @@ func init() {
 // NewAliveList 初始化
 func NewAliveList() *AliveList {
 	return &AliveList{
-		ConnList:  make(map[string]*websocket.Conn, 100),
+		ConnList:  make(map[string]*Client, 100),
 		register:  make(chan *Client, 100),
 		destroy:   make(chan *Client, 100),
 		broadcast: make(chan Message, 100),
@@ -63,8 +79,13 @@ func (al *AliveList) run() {
 		select {
 		case client := <-al.register:
 			log.Println("注册事件:", client.ID)
-			al.ConnList[client.ID] = client.conn
+			al.ConnList[client.ID] = client
 			al.Len++
+			al.SysBroadcast(ConnectedMessage, Message{
+				ID:      client.ID,
+				Content: "connected",
+				SentAt:  time.Now().Unix(),
+			})
 
 		case client := <-al.destroy:
 			log.Println("销毁事件:", client.ID)
@@ -76,13 +97,14 @@ func (al *AliveList) run() {
 			al.Len--
 
 		case message := <-al.broadcast:
-			log.Printf("广播事件: %s %s \n", message.ID, message.Content)
-			auth := []byte(message.ID + "说: ")
-			msg := append(auth, message.Content...)
-
+			log.Printf("广播事件: %s %s %d \n", message.ID, message.Content, message.Type)
 			for id := range al.ConnList {
 				if id != message.ID {
-					al.sendMessage(id, msg)
+
+					err := al.sendMessage(id, message)
+					if err != nil {
+						log.Println("broadcastError: ", err)
+					}
 				}
 			}
 
@@ -93,8 +115,11 @@ func (al *AliveList) run() {
 	}
 }
 
-func (al *AliveList) sendMessage(id string, msg []byte) error {
-	return al.ConnList[id].WriteMessage(websocket.TextMessage, msg)
+func (al *AliveList) sendMessage(id string, msg Message) error {
+	if conn, ok := al.ConnList[id]; ok {
+		return conn.SendMessage(msg.Type, msg.Content)
+	}
+	return fmt.Errorf("conn not found: %v", msg)
 }
 
 // Register 注册
@@ -107,9 +132,15 @@ func (al *AliveList) Destroy(client *Client) {
 	al.destroy <- client
 }
 
-// Broadcast 广播消息
+// Broadcast 个人广播消息
 func (al *AliveList) Broadcast(message Message) {
 	al.broadcast <- message
+}
+
+// SysBroadcast 系统广播 这里加了一个消息类型, 正常的broadcast应该就是 BroadcastMessage 类型消息
+func (al *AliveList) SysBroadcast(messageType int, message Message) {
+	message.Type = messageType
+	al.Broadcast(message)
 }
 
 // Cancel 关闭集合
@@ -134,13 +165,26 @@ func NewWebSocket(id string, w http.ResponseWriter, r *http.Request) (client *Cl
 }
 
 // Broadcast 单个客户端的广播事件
-func (cli *Client) Broadcast(msg []byte) {
-	aliveList.Broadcast(Message{ID: cli.ID, Content: msg})
+func (cli *Client) Broadcast(msg string) {
+	aliveList.Broadcast(Message{
+		ID:      cli.ID,
+		Content: msg,
+		Type:    BroadcastMessage,
+		SentAt:  time.Now().Unix(),
+	})
 }
 
 // SendMessage 单个链接发送消息
-func (cli *Client) SendMessage(messageType int, message []byte) error {
-	err := cli.conn.WriteMessage(messageType, message)
+func (cli *Client) SendMessage(messageType int, message string) error {
+
+	msg := Message{
+		ID:      cli.ID,
+		Content: message,
+		SentAt:  time.Now().Unix(),
+		Type:    messageType,
+	}
+	// 这里固定是
+	err := cli.conn.WriteJSON(msg)
 	if err != nil {
 		log.Println("sendMessageError :", err)
 		cli.Close()
@@ -148,22 +192,26 @@ func (cli *Client) SendMessage(messageType int, message []byte) error {
 	return err
 }
 
-// Close 单个链接断开
+// Close 单个链接断开 (这里可以加一个参数, 进行区分关闭链接时的状态, 比如0:正常关闭,1:非正常关闭 etc..)
 func (cli *Client) Close() {
 	cli.cancel <- 1
-	aliveList.Broadcast(Message{ID: cli.ID, Content: []byte(cli.ID + "小老弟下线了")})
+	aliveList.Broadcast(Message{
+		ID:      cli.ID,
+		Content: "",
+		Type:    DisconnectedMessage,
+	})
 	aliveList.Destroy(cli)
 }
 
 // HeartBeat 服务端检测链接是否正常
 func (cli *Client) HeartBeat() {
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(time.Second * 50)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			cli.SendMessage(websocket.TextMessage, []byte("heart beat"))
+			cli.SendMessage(HeartBeatMessage, "heart beat")
 		case <-cli.cancel:
 			return
 		}
