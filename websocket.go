@@ -208,7 +208,7 @@ func (cli *Client) Close() {
 
 // HeartBeat 服务端检测链接是否正常
 func (cli *Client) HeartBeat() {
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
 
 	for {
