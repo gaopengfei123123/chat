@@ -17,10 +17,13 @@ func init() {
 // ServerStar 启动
 func ServerStar() {
 	flag.Parse()
+
+	// 启动聊天室组件的监听
+	go aliveList.run()
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`hello`))
 	})
-
 	http.HandleFunc("/ws", socketServer)
 
 	log.Printf("监听端口: %v", *addr)

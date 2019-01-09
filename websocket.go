@@ -57,7 +57,6 @@ func init() {
 	}
 
 	aliveList = NewAliveList()
-	go aliveList.run()
 }
 
 // NewAliveList 初始化
