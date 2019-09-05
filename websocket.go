@@ -20,6 +20,8 @@ const (
 	ConnectedMessage
 	// DisconnectedMessage 下线通知
 	DisconnectedMessage
+	// BreakMessage 服务断开链接通知(服务端关闭)
+	BreakMessage
 )
 
 var aliveList *AliveList
@@ -114,6 +116,14 @@ func (al *AliveList) run() {
 	}
 }
 
+// 关闭, 同时向所有client发送关闭信号
+func (al *AliveList) close() {
+	for id, _ := range al.ConnList {
+		conn := al.ConnList[id]
+		conn.SendMessage(BreakMessage, "")
+	}
+}
+
 func (al *AliveList) sendMessage(id string, msg Message) error {
 	if conn, ok := al.ConnList[id]; ok {
 		return conn.SendMessage(msg.Type, msg.Content)
@@ -177,6 +187,11 @@ func (cli *Client) Broadcast(msg string) {
 // SendMessage 单个链接发送消息
 func (cli *Client) SendMessage(messageType int, message string) error {
 
+	if messageType == BreakMessage {
+		err := cli.conn.WriteMessage(websocket.CloseMessage, []byte("close"))
+		return err
+	}
+
 	msg := Message{
 		ID:      cli.ID,
 		Content: message,
@@ -205,7 +220,7 @@ func (cli *Client) Close() {
 	aliveList.Destroy(cli)
 }
 
-// HeartBeat 服务端检测链接是否正常
+// HeartBeat 服务端检测链接是否正常 (鱼唇)
 func (cli *Client) HeartBeat() {
 	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()

@@ -37,9 +37,10 @@ func start() {
 
 	go func() {
 		for {
-			_, message, err := conn.ReadMessage()
+			msgType, message, err := conn.ReadMessage()
 			if err != nil {
 				log.Println("read:", err)
+				log.Println("msgType", msgType)
 				return
 			}
 			var msg chat.Message
