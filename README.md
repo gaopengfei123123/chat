@@ -43,8 +43,9 @@ go run example/client.go
 
 ##### TODO
 
-1. id与conn绑定
-2. 建立群组
-3. 指定范围的广播
-4. socket转http
-5. 历史消息/限流
+1. 多加几个事件钩子
+2. id与conn绑定
+3. 建立群组
+4. 指定范围的广播
+5. socket转http
+6. 历史消息/限流

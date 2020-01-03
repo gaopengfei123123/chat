@@ -10,20 +10,23 @@ import (
 )
 
 const (
-	// SystemMessage 系统消息
+	// SystemMessage 系统消息 0
 	SystemMessage = iota
-	// BroadcastMessage 广播消息(正常的消息)
+	// BroadcastMessage 广播消息(正常的消息) 1
 	BroadcastMessage
-	// HeartBeatMessage 心跳消息
+	// HeartBeatMessage 心跳消息(暂时不处理)  2
 	HeartBeatMessage
-	// ConnectedMessage 上线通知
+	// ConnectedMessage 上线通知 3
 	ConnectedMessage
-	// DisconnectedMessage 下线通知
+	// DisconnectedMessage 下线通知 4
 	DisconnectedMessage
-	// BreakMessage 服务断开链接通知(服务端关闭)
+	// BreakMessage 服务断开链接通知(服务端关闭) 5
 	BreakMessage
+	// RegisterMessage 注册事件消息 6
+	RegisterMessage
 )
 
+// 维护全体活跃链接的对象
 var aliveList *AliveList
 var upgrader = websocket.Upgrader{}
 
@@ -39,17 +42,21 @@ type AliveList struct {
 
 // Client socket客户端
 type Client struct {
-	ID     string
-	conn   *websocket.Conn
+	ID     string          // 链接的唯一标识
+	conn   *websocket.Conn // 链接实体
 	cancel chan int
 }
 
-// Message 消息体结构
+// Message 消息体结构 (文本类消息)
 type Message struct {
-	ID      string
-	Content string
-	SentAt  int64
-	Type    int
+	ID         string // 发送链接id
+	Content    string // 消息内容
+	SentAt     int64  `json:"sent_at"` // 发送时间
+	Type       int    // 消息类型, 如 BroadcastMessage
+	To         string // 消息链接id
+	GroupID    string `json:"group_id"`     // 发送群组id
+	FromUserID string `json:"from_user_id"` // 发送者用户业务id
+	ToUserID   string `json:"to_user_id"`   // 接受者用户业务id
 }
 
 func init() {
@@ -65,9 +72,9 @@ func init() {
 func NewAliveList() *AliveList {
 	return &AliveList{
 		ConnList:  make(map[string]*Client, 100),
-		register:  make(chan *Client, 100),
-		destroy:   make(chan *Client, 100),
-		broadcast: make(chan Message, 100),
+		register:  make(chan *Client, 1000),
+		destroy:   make(chan *Client, 1000),
+		broadcast: make(chan Message, 1000),
 		cancel:    make(chan int),
 		Len:       0,
 	}
@@ -118,7 +125,7 @@ func (al *AliveList) run() {
 
 // 关闭, 同时向所有client发送关闭信号
 func (al *AliveList) close() {
-	for id, _ := range al.ConnList {
+	for id := range al.ConnList {
 		conn := al.ConnList[id]
 		conn.SendMessage(BreakMessage, "")
 	}

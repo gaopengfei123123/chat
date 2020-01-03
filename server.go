@@ -59,7 +59,7 @@ func gentleExit() {
 
 }
 
-// 退出函数
+// ExitFunc 退出函数
 func ExitFunc() {
 	fmt.Println("开始退出...")
 	fmt.Println("执行清理...")
@@ -78,11 +78,18 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 随机生成一个id
-	id := randSeq(10)
+	// 使用Sec-WebSocket-Key当链接key
+	id := r.Header.Get("Sec-WebSocket-Key")
+	log.Printf("header: Sec-WebSocket-Key is \" %v \" \n", id)
 	client, err := NewWebSocket(id, w, r)
-	checkErr(err)
 	defer client.Close()
+
+	if err != nil {
+		errMsg := []byte(`发生链接错误,错误原因` + err.Error())
+		log.Println(errMsg)
+		w.Write(errMsg)
+		return
+	}
 
 	welcome2 := fmt.Sprintf("欢迎 %s", id)
 	client.SendMessage(1, welcome2)
@@ -98,7 +105,16 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 			log.Println("error:", err)
 			return
 		}
+
 		client.Broadcast(string(message))
+
+		err = HandleRequest(client, message)
+		if err != nil {
+			errMsg := []byte(`发生链接错误,错误原因` + err.Error())
+			log.Println(errMsg)
+			w.Write(errMsg)
+			return
+		}
 	}
 
 }
