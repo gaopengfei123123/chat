@@ -11,7 +11,6 @@ func TestUserBind(t *testing.T) {
 	model.BindConnect("connect1")
 	model.BindConnect("connect2")
 	model.BindConnect("connect3")
-
 	model.UnBindConnect("connect2")
 
 	fmt.Printf("userModel: %v \n", model)

@@ -23,9 +23,6 @@ func ServerStar() {
 
 	gentleExit()
 
-	// 启动聊天室组件的监听
-	go aliveList.run()
-
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`hello`))
 	})
@@ -63,7 +60,8 @@ func gentleExit() {
 func ExitFunc() {
 	fmt.Println("开始退出...")
 	fmt.Println("执行清理...")
-	aliveList.close()
+	handler := GetHandler()
+	handler.Close()
 	fmt.Println("结束退出...")
 	os.Exit(0)
 }
@@ -73,7 +71,7 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 	if websocket.IsWebSocketUpgrade(r) {
 		log.Println("收到websocket链接")
 	} else {
-		log.Println("您这不是websocket啊")
+		log.Println("您这也不是websocket啊")
 		w.Write([]byte(`您这也不是websocket啊`))
 		return
 	}
@@ -81,7 +79,7 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 	// 使用Sec-WebSocket-Key当链接key
 	id := r.Header.Get("Sec-WebSocket-Key")
 	log.Printf("header: Sec-WebSocket-Key is \" %v \" \n", id)
-	client, err := NewWebSocket(id, w, r)
+	client, err := NewSocketClient(id, w, r)
 	defer client.Close()
 
 	if err != nil {
@@ -107,7 +105,6 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		client.Broadcast(string(message))
-
 		err = HandleRequest(client, message)
 		if err != nil {
 			errMsg := []byte(`发生链接错误,错误原因` + err.Error())
