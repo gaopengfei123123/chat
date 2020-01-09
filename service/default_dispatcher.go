@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// DefaultHandler 默认适配器
-type DefaultHandler struct {
+// DefaultDispatcher 默认适配器
+type DefaultDispatcher struct {
 	ConnList  map[string]*Client
 	register  chan *Client
 	destroy   chan *Client
@@ -20,7 +20,7 @@ type DefaultHandler struct {
 }
 
 // Init 初始化
-func (th *DefaultHandler) Init() {
+func (th *DefaultDispatcher) Init() {
 	th.ctx, th.cancel = context.WithCancel(context.Background())
 	th.ConnList = make(map[string]*Client)
 	th.register = make(chan *Client, 1000)
@@ -31,18 +31,18 @@ func (th *DefaultHandler) Init() {
 }
 
 // Close 收尾
-func (th *DefaultHandler) Close() {
+func (th *DefaultDispatcher) Close() {
 	log.Println("Close")
 	th.cancel()
 }
 
 // Context 获取文本流
-func (th *DefaultHandler) Context() context.Context {
+func (th *DefaultDispatcher) Context() context.Context {
 	return th.ctx
 }
 
 // Status 当前的状态
-func (th *DefaultHandler) Status() map[string]interface{} {
+func (th *DefaultDispatcher) Status() map[string]interface{} {
 	list := []string{}
 
 	for id := range th.ConnList {
@@ -59,27 +59,27 @@ func (th *DefaultHandler) Status() map[string]interface{} {
 }
 
 // RegisterEvent 注册client事件
-func (th *DefaultHandler) RegisterEvent(cli *Client) error {
+func (th *DefaultDispatcher) RegisterEvent(cli *Client) error {
 	log.Printf("RegisterEvent => cli: %#+v \n", cli)
 	th.register <- cli
 	return nil
 }
 
 // DestroyEvent 销毁client事件
-func (th *DefaultHandler) DestroyEvent(cli *Client) error {
+func (th *DefaultDispatcher) DestroyEvent(cli *Client) error {
 	log.Printf("DestroyEvent =>  cli: %#+v \n", cli)
 	th.destroy <- cli
 	return nil
 }
 
 // HeartBeatEvent 心跳检测事件
-func (th *DefaultHandler) HeartBeatEvent(msg Message, cli *Client) error {
+func (th *DefaultDispatcher) HeartBeatEvent(msg Message, cli *Client) error {
 	log.Printf("HeartBeatEvent =>  msg: %#+v, cli: %#+v \n", msg, cli)
 	return nil
 }
 
 // BroadcastEvent 广播事件
-func (th *DefaultHandler) BroadcastEvent(msg Message, cli *Client) error {
+func (th *DefaultDispatcher) BroadcastEvent(msg Message, cli *Client) error {
 	log.Printf("BroadcastEvent =>  msg: %#+v, cli: %#+v \n", msg, cli)
 	msg.From = cli.ID
 	th.broadcast <- msg
@@ -87,13 +87,13 @@ func (th *DefaultHandler) BroadcastEvent(msg Message, cli *Client) error {
 }
 
 // DefaultMessageEvent 默认发送消息事件
-func (th *DefaultHandler) DefaultMessageEvent(MessageType int, msg Message, cli *Client) error {
+func (th *DefaultDispatcher) DefaultMessageEvent(MessageType int, msg Message, cli *Client) error {
 	log.Printf("DefaultEvent => msgType: %#+v  msg: %#+v, cli: %#+v \n", MessageType, msg, cli)
 	return nil
 }
 
 // HeartBeat 定时检测连接健康程度, 失联的就断开链接
-func (th *DefaultHandler) HeartBeat() {
+func (th *DefaultDispatcher) HeartBeat() {
 	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
 
@@ -112,7 +112,7 @@ func (th *DefaultHandler) HeartBeat() {
 }
 
 // 启动消息接收
-func (th *DefaultHandler) run() {
+func (th *DefaultDispatcher) run() {
 	log.Println("开始监听注册事件")
 
 LOOP:

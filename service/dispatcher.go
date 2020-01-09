@@ -24,11 +24,11 @@ type EventInterface interface {
 }
 
 func init() {
-	SetHandler(&DefaultHandler{})
+	SetDispatcher(&DefaultDispatcher{})
 }
 
-// SetHandler 设置业务处理器
-func SetHandler(adp EventInterface) {
+// SetDispatcher 设置调度器
+func SetDispatcher(adp EventInterface) {
 	// 目前只能有一个去处理业务
 	if socketHandler != nil {
 		socketHandler.Close()
@@ -37,8 +37,8 @@ func SetHandler(adp EventInterface) {
 	socketHandler.Init()
 }
 
-// GetHandler 获取业务处理器
-func GetHandler() EventInterface {
+// GetDispatcher 获取业务处理器
+func GetDispatcher() EventInterface {
 	return socketHandler
 }
 

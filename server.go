@@ -52,16 +52,16 @@ func gentleExit() {
 func ExitFunc() {
 	fmt.Println("开始退出...")
 	fmt.Println("执行清理...")
-	handler := service.GetHandler()
-	handler.Close()
+	dispatcher := service.GetDispatcher()
+	dispatcher.Close()
 	fmt.Println("结束退出...")
 	os.Exit(0)
 }
 
 // SocketStatus 状态查询
 func SocketStatus(w http.ResponseWriter, r *http.Request) {
-	handler := service.GetHandler()
-	statusMap := handler.Status()
+	dispatcher := service.GetDispatcher()
+	statusMap := dispatcher.Status()
 	b, _ := json.Marshal(statusMap)
 	w.Write(b)
 }
