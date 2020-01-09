@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -20,16 +21,9 @@ func init() {
 // ServerStar 启动
 func ServerStar() {
 	flag.Parse()
-
 	gentleExit()
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`hello`))
-	})
-	http.HandleFunc("/ws", socketServer)
-
-	log.Printf("监听端口: %v", *addr)
-	log.Fatal(http.ListenAndServe(*addr, nil))
+	mux := Routes()
+	log.Fatal(http.ListenAndServe(*addr, mux))
 }
 
 // 监听关闭信号
@@ -53,7 +47,6 @@ func gentleExit() {
 			}
 		}
 	}()
-
 }
 
 // ExitFunc 退出函数
@@ -66,7 +59,16 @@ func ExitFunc() {
 	os.Exit(0)
 }
 
-func socketServer(w http.ResponseWriter, r *http.Request) {
+// SocketStatus 状态查询
+func SocketStatus(w http.ResponseWriter, r *http.Request) {
+	handler := GetHandler()
+	statusMap := handler.Status()
+	b, _ := json.Marshal(statusMap)
+	w.Write(b)
+}
+
+// SocketServer websocket服务
+func SocketServer(w http.ResponseWriter, r *http.Request) {
 
 	if websocket.IsWebSocketUpgrade(r) {
 		log.Println("收到websocket链接")
@@ -89,8 +91,11 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	welcome2 := fmt.Sprintf("欢迎 %s", id)
-	client.SendMessage(1, welcome2)
+	msg := Message{
+		Content: fmt.Sprintf("欢迎 %s", id),
+		Type:    SystemMessage,
+	}
+	client.SendText(msg)
 
 	for {
 		_, message, err := client.conn.ReadMessage()
@@ -108,7 +113,7 @@ func socketServer(w http.ResponseWriter, r *http.Request) {
 		err = HandleRequest(client, message)
 		if err != nil {
 			errMsg := []byte(`发生链接错误,错误原因` + err.Error())
-			log.Println(errMsg)
+			log.Printf("%s \n", errMsg)
 			w.Write(errMsg)
 			return
 		}

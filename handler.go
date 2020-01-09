@@ -20,6 +20,7 @@ type EventInterface interface {
 	Context() context.Context
 	Init()
 	Close()
+	Status() map[string]interface{}
 }
 
 func init() {

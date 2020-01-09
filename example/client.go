@@ -35,29 +35,8 @@ func start() {
 	}
 	defer conn.Close()
 
-	go func() {
-		for {
-			msgType, message, err := conn.ReadMessage()
-			if err != nil {
-				log.Println("read:", err)
-				log.Println("msgType", msgType)
-				return
-			}
-			var msg chat.Message
-			json.Unmarshal(message, &msg)
-			switch msg.Type {
-			case chat.SystemMessage:
-				log.Printf("系统广播 %v\n", msg)
-			case chat.BroadcastMessage:
-				log.Printf("%s 说: %s \n", msg.ID, msg.Content)
-			case chat.ConnectedMessage:
-				log.Printf("%s  上线\n", msg.ID)
-			case chat.DisconnectedMessage:
-				log.Printf("%s  下线\n", msg.ID)
-			}
-
-		}
-	}()
+	// 监听输出
+	go output(conn)
 
 	// 循环接收客户端输入
 	for {
@@ -65,6 +44,51 @@ func start() {
 		if err != nil {
 			log.Panic(err)
 		}
-		conn.WriteMessage(websocket.TextMessage, []byte(input))
+		// log.Printf("input: %#+v \n", input)
+		msg := buildMsg(input)
+		conn.WriteMessage(websocket.TextMessage, msg)
 	}
+}
+
+// 监听输出
+func output(conn *websocket.Conn) {
+	for {
+		msgType, message, err := conn.ReadMessage()
+		if err != nil {
+			if msgType == -1 {
+				log.Println("服务端断开链接")
+				os.Exit(0)
+			}
+			log.Println("read:", err)
+			log.Println("msgType", msgType)
+			return
+		}
+		var msg chat.Message
+		json.Unmarshal(message, &msg)
+		// log.Printf("\n \n 接收到消息: %#+v \n \n", msg)
+
+		switch msg.Type {
+		case chat.SystemMessage:
+			log.Printf("系统广播 %v\n", msg.Content)
+		case chat.BroadcastMessage:
+			log.Printf("%s 说: %s \n", msg.From, msg.Content)
+		case chat.ConnectedMessage:
+			log.Printf("%s  上线\n", msg.From)
+		case chat.DisconnectedMessage:
+			log.Printf("%s  下线\n", msg.From)
+		}
+	}
+}
+
+func buildMsg(msg string) []byte {
+	m := chat.Message{
+		Content: msg,
+		Type:    chat.BroadcastMessage,
+	}
+
+	b, err := json.Marshal(m)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }

@@ -33,7 +33,6 @@ var upgrader = websocket.Upgrader{}
 type Client struct {
 	ID         string          // 链接的唯一标识
 	conn       *websocket.Conn // 链接实体
-	cancel     chan int
 	Ctx        context.Context
 	CancelFunc context.CancelFunc
 }
@@ -71,7 +70,6 @@ func NewSocketClient(id string, w http.ResponseWriter, r *http.Request) (client 
 	client = &Client{
 		conn:       conn,
 		ID:         id,
-		cancel:     make(chan int, 1),
 		Ctx:        ctx,
 		CancelFunc: cancel,
 	}
@@ -84,8 +82,9 @@ func NewSocketClient(id string, w http.ResponseWriter, r *http.Request) (client 
 func (cli *Client) Broadcast(msg string) {
 	handler := GetHandler()
 	handler.BroadcastEvent(Message{
-		ID:      randSeq(32),
+		ID:      RandSeq(32),
 		Content: msg,
+		From:    cli.ID,
 		Type:    BroadcastMessage,
 		SentAt:  time.Now().Unix(),
 	}, cli)

@@ -3,6 +3,7 @@ package chat
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 )
@@ -38,6 +39,23 @@ func (th *DefaultHandler) Close() {
 // Context 获取文本流
 func (th *DefaultHandler) Context() context.Context {
 	return th.ctx
+}
+
+// Status 当前的状态
+func (th *DefaultHandler) Status() map[string]interface{} {
+	list := []string{}
+
+	for id := range th.ConnList {
+		list = append(list, id)
+	}
+
+	tmp := map[string]interface{}{
+		"register_stacking":  fmt.Sprintf("%d/%d", len(th.register), cap(th.register)),
+		"broadcast_stacking": fmt.Sprintf("%d/%d", len(th.broadcast), cap(th.broadcast)),
+		"destroy_stacking":   fmt.Sprintf("%d/%d", len(th.destroy), cap(th.destroy)),
+		"connect_client_id":  list,
+	}
+	return tmp
 }
 
 // RegisterEvent 注册client事件
@@ -115,9 +133,9 @@ LOOP:
 		case message := <-th.broadcast:
 			log.Printf("广播事件: %#+v \n", message)
 			for id := range th.ConnList {
-				if id != message.ID {
+				if id != message.From {
 					client := th.ConnList[id]
-					err := client.SendMessage(message.Type, message.Content)
+					err := client.SendText(message)
 					if err != nil {
 						log.Println("broadcastError: ", err)
 					}

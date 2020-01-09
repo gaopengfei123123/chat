@@ -26,7 +26,7 @@ func TestUserLoad(t *testing.T) {
 
 	model.Load(json)
 	model.BindConnect("connect2")
-	fmt.Printf("userModel: %+v \n", model)
+	fmt.Printf("userModel: %#+v \n", model)
 }
 
 func TestUserList(t *testing.T) {
