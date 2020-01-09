@@ -1,5 +1,5 @@
-// Package chat 提供一个默认的处理模型
-package chat
+// Package service 提供一个默认的处理模型
+package service
 
 import (
 	"context"

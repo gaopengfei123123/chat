@@ -1,6 +1,7 @@
-package chat
+package service
 
 import (
+	"chat/library"
 	"context"
 	"log"
 	"net/http"
@@ -26,9 +27,6 @@ const (
 	RegisterMessage
 )
 
-// 跨域配置
-var upgrader = websocket.Upgrader{}
-
 // Client socket客户端
 type Client struct {
 	ID         string          // 链接的唯一标识
@@ -49,6 +47,9 @@ type Message struct {
 	ToUserID   string      `json:"to_user_id"`   // 接受者用户业务id
 	Ext        interface{} `json:"ext"`          // 扩展字段, 按需使用
 }
+
+// 跨域配置
+var upgrader = websocket.Upgrader{}
 
 func init() {
 	// 允许跨域请求
@@ -82,12 +83,17 @@ func NewSocketClient(id string, w http.ResponseWriter, r *http.Request) (client 
 func (cli *Client) Broadcast(msg string) {
 	handler := GetHandler()
 	handler.BroadcastEvent(Message{
-		ID:      RandSeq(32),
+		ID:      library.RandSeq(32),
 		Content: msg,
 		From:    cli.ID,
 		Type:    BroadcastMessage,
 		SentAt:  time.Now().Unix(),
 	}, cli)
+}
+
+// ReadMessage 读消息
+func (cli *Client) ReadMessage() (interface{},[]byte, error) {
+	return cli.conn.ReadMessage()
 }
 
 // SendMessage 单个链接发送消息, 默认模板

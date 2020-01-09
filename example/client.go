@@ -2,13 +2,14 @@ package main
 
 import (
 	"bufio"
-	"chat"
+	"chat/service"
 	"encoding/json"
 	"flag"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/url"
 	"os"
+
+	"github.com/gorilla/websocket"
 )
 
 var host = flag.String("host", "localhost:8080", "http service address")
@@ -63,27 +64,27 @@ func output(conn *websocket.Conn) {
 			log.Println("msgType", msgType)
 			return
 		}
-		var msg chat.Message
+		var msg service.Message
 		json.Unmarshal(message, &msg)
 		// log.Printf("\n \n 接收到消息: %#+v \n \n", msg)
 
 		switch msg.Type {
-		case chat.SystemMessage:
+		case service.SystemMessage:
 			log.Printf("系统广播 %v\n", msg.Content)
-		case chat.BroadcastMessage:
+		case service.BroadcastMessage:
 			log.Printf("%s 说: %s \n", msg.From, msg.Content)
-		case chat.ConnectedMessage:
+		case service.ConnectedMessage:
 			log.Printf("%s  上线\n", msg.From)
-		case chat.DisconnectedMessage:
+		case service.DisconnectedMessage:
 			log.Printf("%s  下线\n", msg.From)
 		}
 	}
 }
 
 func buildMsg(msg string) []byte {
-	m := chat.Message{
+	m := service.Message{
 		Content: msg,
-		Type:    chat.BroadcastMessage,
+		Type:    service.BroadcastMessage,
 	}
 
 	b, err := json.Marshal(m)

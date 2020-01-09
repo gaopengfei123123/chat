@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"chat/service"
 	"fmt"
 	"testing"
 )
@@ -46,7 +47,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["accept_id"]
 	}`)
 
-	err = HandleRequest(cli, msg)
+	err = service.HandleRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)
@@ -59,7 +60,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["accept_id"]
 	}`)
 
-	err = HandleRequest(cli, msg)
+	err = service.HandleRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)

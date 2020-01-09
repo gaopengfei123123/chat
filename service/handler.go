@@ -1,5 +1,5 @@
-// Package chat 处理socket请求
-package chat
+// Package service 处理socket请求
+package service
 
 import (
 	"context"

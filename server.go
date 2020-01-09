@@ -1,18 +1,18 @@
 package chat
 
 import (
+	"chat/config"
+	"chat/service"
 	"encoding/json"
-	"flag"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-)
 
-var addr = flag.String("addr", "localhost:8080", "聊天室地址,eg  localhost:8080")
+	"github.com/gorilla/websocket"
+)
 
 func init() {
 	log.SetFlags(log.Ldate | log.Lshortfile)
@@ -20,10 +20,9 @@ func init() {
 
 // ServerStar 启动
 func ServerStar() {
-	flag.Parse()
 	gentleExit()
 	mux := Routes()
-	log.Fatal(http.ListenAndServe(*addr, mux))
+	log.Fatal(http.ListenAndServe(*config.ADDR, mux))
 }
 
 // 监听关闭信号
@@ -53,7 +52,7 @@ func gentleExit() {
 func ExitFunc() {
 	fmt.Println("开始退出...")
 	fmt.Println("执行清理...")
-	handler := GetHandler()
+	handler := service.GetHandler()
 	handler.Close()
 	fmt.Println("结束退出...")
 	os.Exit(0)
@@ -61,7 +60,7 @@ func ExitFunc() {
 
 // SocketStatus 状态查询
 func SocketStatus(w http.ResponseWriter, r *http.Request) {
-	handler := GetHandler()
+	handler := service.GetHandler()
 	statusMap := handler.Status()
 	b, _ := json.Marshal(statusMap)
 	w.Write(b)
@@ -81,7 +80,7 @@ func SocketServer(w http.ResponseWriter, r *http.Request) {
 	// 使用Sec-WebSocket-Key当链接key
 	id := r.Header.Get("Sec-WebSocket-Key")
 	log.Printf("header: Sec-WebSocket-Key is \" %v \" \n", id)
-	client, err := NewSocketClient(id, w, r)
+	client, err := service.NewSocketClient(id, w, r)
 	defer client.Close()
 
 	if err != nil {
@@ -91,14 +90,14 @@ func SocketServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := Message{
+	msg := service.Message{
 		Content: fmt.Sprintf("欢迎 %s", id),
-		Type:    SystemMessage,
+		Type:    service.SystemMessage,
 	}
 	client.SendText(msg)
 
 	for {
-		_, message, err := client.conn.ReadMessage()
+		_, message, err := client.ReadMessage()
 		// log.Printf("read in server:  %s  err: %v \n", message, err)
 		if websocket.IsCloseError(err, websocket.CloseNoStatusReceived, websocket.CloseAbnormalClosure) {
 			log.Println("主动断开链接")
@@ -110,7 +109,7 @@ func SocketServer(w http.ResponseWriter, r *http.Request) {
 		}
 
 		client.Broadcast(string(message))
-		err = HandleRequest(client, message)
+		err = service.HandleRequest(client, message)
 		if err != nil {
 			errMsg := []byte(`发生链接错误,错误原因` + err.Error())
 			log.Printf("%s \n", errMsg)

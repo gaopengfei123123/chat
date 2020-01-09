@@ -1,4 +1,4 @@
-package chat
+package library
 
 import (
 	"math/rand"
