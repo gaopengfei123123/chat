@@ -90,11 +90,7 @@ func SocketServer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg := service.Message{
-		Content: fmt.Sprintf("欢迎 %s", id),
-		Type:    service.SystemMessage,
-	}
-	client.SendText(msg)
+	client.SysBroadcast(fmt.Sprintf("欢迎 %s", id))
 
 	for {
 		_, message, err := client.ReadMessage()
@@ -108,8 +104,8 @@ func SocketServer(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		client.Broadcast(string(message))
-		err = service.HandleRequest(client, message)
+		// client.Broadcast(string(message))
+		err = service.DispatchRequest(client, message)
 		if err != nil {
 			errMsg := []byte(`发生链接错误,错误原因` + err.Error())
 			log.Printf("%s \n", errMsg)

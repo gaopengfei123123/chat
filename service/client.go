@@ -3,6 +3,7 @@ package service
 import (
 	"chat/library"
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -33,12 +34,22 @@ func NewSocketClient(id string, w http.ResponseWriter, r *http.Request) (client 
 
 // Broadcast 单个客户端的广播事件
 func (cli *Client) Broadcast(msg string) {
-	dispatcher := GetDispatcher()
-	dispatcher.BroadcastEvent(Message{
+	GetDispatcher().BroadcastEvent(Message{
 		ID:      library.RandSeq(32),
 		Content: msg,
 		From:    cli.ID,
 		Type:    BroadcastMessage,
+		SentAt:  time.Now().Unix(),
+	}, cli)
+}
+
+// SysBroadcast 单个客户端的系统广播事件
+func (cli *Client) SysBroadcast(msg string) {
+	GetDispatcher().BroadcastEvent(Message{
+		ID:      library.RandSeq(32),
+		Content: msg,
+		From:    cli.ID,
+		Type:    SystemMessage,
 		SentAt:  time.Now().Unix(),
 	}, cli)
 }
@@ -83,4 +94,29 @@ func (cli *Client) Close() {
 	cli.CancelFunc()
 	dispatcher := GetDispatcher()
 	dispatcher.DestroyEvent(cli)
+}
+
+// DispatchRequest 分发请求
+func DispatchRequest(cli *Client, msg []byte) (err error) {
+	log.Printf("获取信息: %s \n", msg)
+
+	var msgBody Message
+	err = json.Unmarshal(msg, &msgBody)
+
+	if err != nil {
+		return
+	}
+
+	// log.Printf("MessageBody: %#+v \n", msgBody)
+
+	switch msgBody.Type {
+	case BroadcastMessage, SystemMessage:
+		socketHandler.BroadcastEvent(msgBody, cli)
+	case HeartBeatMessage:
+		socketHandler.HeartBeatEvent(msgBody, cli)
+	default:
+		// 自定义的type就层层套娃一下
+		socketHandler.DefaultMessageEvent(msgBody.Type, msgBody, cli)
+	}
+	return
 }

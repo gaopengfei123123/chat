@@ -21,7 +21,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["%s"]
 	}`, sendID, acceptID))
 
-	err = service.HandleRequest(cli, msg)
+	err = service.DispatchRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)
@@ -34,7 +34,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["accept_id"]
 	}`)
 
-	err = service.HandleRequest(cli, msg)
+	err = service.DispatchRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)
@@ -47,7 +47,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["accept_id"]
 	}`)
 
-	err = service.HandleRequest(cli, msg)
+	err = service.DispatchRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)
@@ -60,7 +60,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["accept_id"]
 	}`)
 
-	err = service.HandleRequest(cli, msg)
+	err = service.DispatchRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)
@@ -73,7 +73,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["%s"]
 	}`, sendID, acceptID))
 
-	err = service.HandleRequest(cli, msg)
+	err = service.DispatchRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)
@@ -86,7 +86,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["%s"]
 	}`, sendID, acceptID))
 
-	err = service.HandleRequest(cli, msg)
+	err = service.DispatchRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)
@@ -99,7 +99,7 @@ func TestHandleRequest(t *testing.T) {
 		"to": ["%s"]
 	}`, sendID, acceptID))
 
-	err = service.HandleRequest(cli, msg)
+	err = service.DispatchRequest(cli, msg)
 
 	if err != nil {
 		t.Error(err)

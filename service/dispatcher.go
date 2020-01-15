@@ -3,8 +3,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"log"
 )
 
 // 默认适配器 全局存储
@@ -40,29 +38,4 @@ func SetDispatcher(adp EventInterface) {
 // GetDispatcher 获取业务处理器
 func GetDispatcher() EventInterface {
 	return socketHandler
-}
-
-// HandleRequest 处理
-func HandleRequest(cli *Client, msg []byte) (err error) {
-	log.Printf("获取信息: %s \n", msg)
-
-	var msgBody Message
-	err = json.Unmarshal(msg, &msgBody)
-
-	if err != nil {
-		return
-	}
-
-	// log.Printf("MessageBody: %#+v \n", msgBody)
-
-	switch msgBody.Type {
-	case BroadcastMessage, SystemMessage:
-		socketHandler.BroadcastEvent(msgBody, cli)
-	case HeartBeatMessage:
-		socketHandler.HeartBeatEvent(msgBody, cli)
-	default:
-		// 自定义的type就层层套娃一下
-		socketHandler.DefaultMessageEvent(msgBody.Type, msgBody, cli)
-	}
-	return
 }

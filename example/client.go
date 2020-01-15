@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"chat/library"
 	"chat/service"
 	"encoding/json"
 	"flag"
@@ -45,6 +46,13 @@ func start() {
 		if err != nil {
 			log.Panic(err)
 		}
+
+		input = library.Trim(input)
+
+		if input == "" {
+			continue
+		}
+
 		// log.Printf("input: %#+v \n", input)
 		msg := buildMsg(input)
 		conn.WriteMessage(websocket.TextMessage, msg)
