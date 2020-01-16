@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var host = flag.String("host", "localhost:8080", "http service address")
+var host = flag.String("host", "0.0.0.0:8080", "http service address")
 
 func main() {
 	start()
