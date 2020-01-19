@@ -45,13 +45,13 @@ func (cli *Client) Broadcast(msg string) {
 
 // SysBroadcast 单个客户端的系统广播事件
 func (cli *Client) SysBroadcast(msg string) {
-	GetDispatcher().BroadcastEvent(Message{
+	cli.DispatchRequest(Message{
 		ID:      library.RandSeq(32),
 		Content: msg,
 		From:    cli.ID,
 		Type:    SystemMessage,
 		SentAt:  time.Now().Unix(),
-	}, cli)
+	})
 }
 
 // ReadMessage 读消息
@@ -59,7 +59,24 @@ func (cli *Client) ReadMessage() (messageType int, p []byte, err error) {
 	return cli.conn.ReadMessage()
 }
 
-// SendMessage 单个链接发送消息, 默认模板
+// DispatchRequest 分发消息
+func (cli *Client) DispatchRequest(msg Message) (err error) {
+	log.Printf("获取信息: %#+v \n", msg)
+
+	dispatcher := GetDispatcher()
+	switch msg.Type {
+	case BroadcastMessage, SystemMessage:
+		err = dispatcher.BroadcastEvent(msg, cli)
+	case HeartBeatMessage:
+		err = dispatcher.HeartBeatEvent(msg, cli)
+	default:
+		// 自定义的type就层层套娃一下
+		err = dispatcher.DefaultMessageEvent(msg.Type, msg, cli)
+	}
+	return
+}
+
+// SendMessage 单个链接快速发送消息, 默认模板
 func (cli *Client) SendMessage(messageType int, message string) error {
 
 	if messageType == BreakMessage {

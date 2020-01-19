@@ -104,8 +104,13 @@ func SocketServer(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// client.Broadcast(string(message))
-		err = service.DispatchRequest(client, message)
+		var msgBody service.Message
+		err = json.Unmarshal(message, &msgBody)
+
+		if err != nil {
+			return
+		}
+		err = client.DispatchRequest(msgBody)
 		if err != nil {
 			errMsg := []byte(`发生链接错误,错误原因` + err.Error())
 			log.Printf("%s \n", errMsg)

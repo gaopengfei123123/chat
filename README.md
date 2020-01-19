@@ -44,7 +44,7 @@ go run example/client.go
 ##### TODO
 
 - [x] 增加事件钩子, 业务解耦
-- [ ] 结构化消息格式 
+- [x] 结构化消息格式 
 - [ ] 日志
 - [ ] 消息持久化
 - [ ] conn 和 user_id 的关联绑定
