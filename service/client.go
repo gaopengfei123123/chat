@@ -1,6 +1,7 @@
 package service
 
 import (
+	"chat/config"
 	"chat/library"
 	"context"
 	"encoding/json"
@@ -56,7 +57,36 @@ func (cli *Client) SysBroadcast(msg string) {
 
 // ReadMessage 读消息
 func (cli *Client) ReadMessage() (messageType int, p []byte, err error) {
-	return cli.conn.ReadMessage()
+	messageType, p, err = cli.conn.ReadMessage()
+	cli.lastRequestTime = time.Now()
+	cli.retryTime = 0
+	log.Printf("更新时间 %d \n", cli.lastRequestTime)
+	return
+}
+
+// HeartBeat 心跳检测
+// 最近接收过消息就不做心跳检测
+func (cli *Client) HeartBeat() (err error) {
+	log.Printf("start check heartBeat, ID: %s \n", cli.ID)
+	last := time.Now().Sub(cli.lastRequestTime)
+
+	if last < config.HeartbeatInterval {
+		return nil
+	}
+
+	if cli.retryTime > config.MaxRetryTime {
+		cli.Close()
+	}
+
+	log.Printf("当前客户端: %#+v \n", cli)
+	msg := Message{
+		Type:    HeartBeatMessage,
+		Content: "",
+	}
+	cli.retryTime++
+	err = cli.SendText(msg)
+
+	return nil
 }
 
 // DispatchRequest 分发消息
@@ -103,6 +133,7 @@ func (cli *Client) SendMessage(messageType int, message string) error {
 
 // SendText 发送文本类消息
 func (cli *Client) SendText(msg Message) error {
+	msg.SentAt = time.Now().Unix()
 	return cli.conn.WriteJSON(msg)
 }
 

@@ -21,6 +21,7 @@ func init() {
 // ServerStar 启动
 func ServerStar() {
 	gentleExit()
+	service.Start()
 	mux := Routes()
 	log.Fatal(http.ListenAndServe(*config.ADDR, mux))
 }

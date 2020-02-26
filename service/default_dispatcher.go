@@ -26,8 +26,9 @@ func (th *DefaultDispatcher) Init() {
 	th.register = make(chan *Client, 1000)
 	th.destroy = make(chan *Client, 1000)
 	th.broadcast = make(chan Message, 1000)
-	go th.run()
 	log.Println("Init")
+	go th.run()
+	go th.HeartBeat()
 }
 
 // Close 收尾
@@ -75,7 +76,7 @@ func (th *DefaultDispatcher) DestroyEvent(cli *Client) error {
 // HeartBeatEvent 心跳检测事件
 func (th *DefaultDispatcher) HeartBeatEvent(msg Message, cli *Client) error {
 	log.Printf("HeartBeatEvent =>  msg: %#+v, cli: %#+v \n", msg, cli)
-	return nil
+	return cli.HeartBeat()
 }
 
 // BroadcastEvent 广播事件
@@ -94,15 +95,16 @@ func (th *DefaultDispatcher) DefaultMessageEvent(MessageType int, msg Message, c
 
 // HeartBeat 定时检测连接健康程度, 失联的就断开链接
 func (th *DefaultDispatcher) HeartBeat() {
-	ticker := time.NewTicker(time.Second * 30)
+	log.Println("开始心跳检测")
+	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
+			log.Println("heartBeat")
 			for id := range th.ConnList {
-				conn := th.ConnList[id]
-				conn.SendMessage(HeartBeatMessage, "hart beat")
+				th.ConnList[id].HeartBeat()
 			}
 		case <-th.ctx.Done():
 			log.Println("关闭 heart beat")

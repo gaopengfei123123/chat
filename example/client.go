@@ -16,6 +16,7 @@ import (
 var host = flag.String("host", "0.0.0.0:8080", "http service address")
 
 func main() {
+	log.SetFlags(log.Ldate | log.Lshortfile)
 	start()
 }
 

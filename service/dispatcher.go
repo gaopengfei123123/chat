@@ -22,6 +22,10 @@ type EventInterface interface {
 }
 
 func init() {
+}
+
+// Start 开启ws服务监听
+func Start() {
 	SetDispatcher(&DefaultDispatcher{})
 }
 
