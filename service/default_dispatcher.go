@@ -2,6 +2,7 @@
 package service
 
 import (
+	"chat/config"
 	"context"
 	"errors"
 	"fmt"
@@ -114,7 +115,7 @@ func (th *DefaultDispatcher) DefaultMessageEvent(MessageType int, msg Message, c
 
 // HeartBeat 定时检测连接健康程度, 失联的就断开链接
 func (th *DefaultDispatcher) HeartBeat() {
-	ticker := time.NewTicker(time.Second * 30)
+	ticker := time.NewTicker(config.HeartbeatInterval)
 	defer ticker.Stop()
 
 	for {
