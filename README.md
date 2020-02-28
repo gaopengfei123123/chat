@@ -49,6 +49,7 @@ go run example/client.go
 - [ ] 消息持久化
 - [ ] conn 和 user_id 的关联绑定
 - [ ] 指定范围的广播(群组)
+- [ ] 定向消息(@人)
 - [ ] socket转http
 - [ ] 历史消息/限流
 - [ ] 闲时心跳检测

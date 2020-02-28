@@ -86,14 +86,24 @@ func output(conn *websocket.Conn) {
 			log.Printf("%s  上线\n", msg.From)
 		case service.DisconnectedMessage:
 			log.Printf("%s  下线\n", msg.From)
+		case service.HeartBeatMessage:
+			msg := buildMsg("", service.HeartBeatMessage)
+			log.Println("heartBeat ack")
+			conn.WriteMessage(websocket.TextMessage, msg)
+		default:
+			log.Printf("msyType: %d, content: %v\n", msg.Type, msg.Content)
 		}
 	}
 }
 
-func buildMsg(msg string) []byte {
+func buildMsg(msg string, Type ...int) []byte {
 	m := service.Message{
 		Content: msg,
 		Type:    service.BroadcastMessage,
+	}
+
+	if len(Type) > 0 {
+		m.Type = Type[0]
 	}
 
 	b, err := json.Marshal(m)

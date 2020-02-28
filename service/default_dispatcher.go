@@ -75,8 +75,10 @@ func (th *DefaultDispatcher) DestroyEvent(cli *Client) error {
 
 // HeartBeatEvent 心跳检测事件
 func (th *DefaultDispatcher) HeartBeatEvent(msg Message, cli *Client) error {
+	// 这里客户端发来的心跳ack不处理
 	log.Printf("HeartBeatEvent =>  msg: %#+v, cli: %#+v \n", msg, cli)
-	return cli.HeartBeat()
+	return nil
+	// return cli.HeartBeat()
 }
 
 // BroadcastEvent 广播事件
@@ -95,8 +97,7 @@ func (th *DefaultDispatcher) DefaultMessageEvent(MessageType int, msg Message, c
 
 // HeartBeat 定时检测连接健康程度, 失联的就断开链接
 func (th *DefaultDispatcher) HeartBeat() {
-	log.Println("开始心跳检测")
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
 
 	for {

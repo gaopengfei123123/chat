@@ -74,11 +74,11 @@ func (cli *Client) HeartBeat() (err error) {
 		return nil
 	}
 
-	if cli.retryTime > config.MaxRetryTime {
+	if cli.retryTime >= config.MaxRetryTime {
 		cli.Close()
 	}
 
-	log.Printf("当前客户端: %#+v \n", cli)
+	// log.Printf("当前客户端: %#+v \n", cli)
 	msg := Message{
 		Type:    HeartBeatMessage,
 		Content: "",

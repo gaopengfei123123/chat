@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
-	"github.com/gorilla/websocket"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -22,6 +23,8 @@ const (
 	BreakMessage
 	// RegisterMessage 注册事件消息 6
 	RegisterMessage
+	// DirectMessage 定向消息 7
+	DirectMessage
 )
 
 // Client socket客户端
