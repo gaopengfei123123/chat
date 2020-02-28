@@ -15,6 +15,7 @@ type EventInterface interface {
 	HeartBeatEvent(msg Message, cli *Client) error
 	BroadcastEvent(msg Message, cli *Client) error
 	DefaultMessageEvent(MessageType int, msg Message, cli *Client) error
+	GetClientByID(id string) (cli *Client, err error)
 	Context() context.Context
 	Init()
 	Close()

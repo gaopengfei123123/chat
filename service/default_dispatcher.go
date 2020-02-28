@@ -3,10 +3,18 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 )
+
+// ErrClientIDNotFound 找不到 client id
+var ErrClientIDNotFound error
+
+func init() {
+	ErrClientIDNotFound = errors.New("找不到 client id")
+}
 
 // DefaultDispatcher 默认适配器
 type DefaultDispatcher struct {
@@ -87,6 +95,15 @@ func (th *DefaultDispatcher) BroadcastEvent(msg Message, cli *Client) error {
 	msg.From = cli.ID
 	th.broadcast <- msg
 	return nil
+}
+
+// GetClientByID 获取指定客户端
+func (th *DefaultDispatcher) GetClientByID(id string) (cli *Client, err error) {
+	cli, ok := th.ConnList[id]
+	if !ok {
+		return nil, ErrClientIDNotFound
+	}
+	return
 }
 
 // DefaultMessageEvent 默认发送消息事件

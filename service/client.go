@@ -60,7 +60,6 @@ func (cli *Client) ReadMessage() (messageType int, p []byte, err error) {
 	messageType, p, err = cli.conn.ReadMessage()
 	cli.lastRequestTime = time.Now()
 	cli.retryTime = 0
-	log.Printf("更新时间 %d \n", cli.lastRequestTime)
 	return
 }
 
@@ -99,11 +98,38 @@ func (cli *Client) DispatchRequest(msg Message) (err error) {
 		err = dispatcher.BroadcastEvent(msg, cli)
 	case HeartBeatMessage:
 		err = dispatcher.HeartBeatEvent(msg, cli)
+	case DirectMessage:
+		err = cli.SendToClient(msg)
 	default:
 		// 自定义的type就层层套娃一下
 		err = dispatcher.DefaultMessageEvent(msg.Type, msg, cli)
 	}
 	return
+}
+
+// SendToClient 消息发送到指定client
+func (cli *Client) SendToClient(msg Message) error {
+	log.Printf("定向发送消息: %#+v \n", msg)
+	dispatcher := GetDispatcher()
+
+	for _, id := range msg.To {
+		client, err := dispatcher.GetClientByID(id)
+		if err != nil {
+			log.Printf("SendToClient Err: %#+v \n", err)
+			continue
+		}
+		msg.SentAt = time.Now().Unix()
+		msg.To = []string{id}
+
+		err = client.SendText(msg)
+		if err != nil {
+			log.Println("sendMessageError :", err)
+			log.Println("message: ", msg)
+			log.Printf("cli: %#+v \n", cli)
+			cli.Close()
+		}
+	}
+	return nil
 }
 
 // SendMessage 单个链接快速发送消息, 默认模板
