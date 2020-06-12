@@ -154,7 +154,7 @@ LOOP:
 		case message := <-th.broadcast:
 			log.Printf("广播事件: %#+v \n", message)
 			for id := range th.ConnList {
-				if id != message.From {
+				if id != message.From { // 自己发送的消息自己不会收到
 					client := th.ConnList[id]
 					err := client.SendText(message)
 					if err != nil {

@@ -111,6 +111,8 @@ func SocketServer(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
+
+		// 将收到的消息广播给所有链接
 		err = client.DispatchRequest(msgBody)
 		if err != nil {
 			errMsg := []byte(`发生链接错误,错误原因` + err.Error())

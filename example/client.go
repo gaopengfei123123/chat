@@ -6,6 +6,7 @@ import (
 	"chat/service"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/url"
 	"os"
@@ -14,9 +15,12 @@ import (
 )
 
 var host = flag.String("host", "0.0.0.0:8080", "http service address")
+var user userModel // 临时用户名
 
 func main() {
 	log.SetFlags(log.Ldate | log.Lshortfile)
+
+	user = tmpUser()
 	start()
 }
 
@@ -26,6 +30,31 @@ func init() {
 	inputReader = bufio.NewReader(os.Stdin)
 }
 
+// 临时的用户结构
+type userModel struct {
+	Name string
+}
+
+// 简单的写一个临时账号的玩意
+func tmpUser() userModel {
+	fmt.Println("请输入一个名字:")
+
+	input, err := inputReader.ReadString('\n')
+
+	if err != nil {
+		fmt.Printf("An Error occurred:%s\n", err)
+		os.Exit(1)
+	}
+	name := input[:len(input)-1]
+	fmt.Printf("Hello %s! What can I do for you?\n", name)
+
+	u := userModel{
+		Name: name,
+	}
+	return u
+}
+
+// 启动客户端
 func start() {
 	flag.Parse()
 
@@ -40,6 +69,10 @@ func start() {
 
 	// 监听输出
 	go output(conn)
+
+	// 注册账户名
+	m := registerMsg(user.Name)
+	conn.WriteMessage(websocket.TextMessage, m)
 
 	// 循环接收客户端输入
 	for {
@@ -88,12 +121,30 @@ func output(conn *websocket.Conn) {
 			log.Printf("%s  下线\n", msg.From)
 		case service.HeartBeatMessage:
 			msg := buildMsg("", service.HeartBeatMessage)
-			log.Println("heartBeat ack")
+			// log.Println("heartBeat ack")
 			conn.WriteMessage(websocket.TextMessage, msg)
 		default:
 			log.Printf("msyType: %d, content: %v\n", msg.Type, msg.Content)
 		}
 	}
+}
+
+// 构建注册类消息(临时注册)
+func registerMsg(name string) []byte {
+	m := service.Message{
+		Content: "",
+		Type:    service.RegisterMessage,
+		Ext: map[string]interface{}{
+			"tmp":  "1",
+			"name": name,
+		},
+	}
+
+	b, err := json.Marshal(m)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func buildMsg(msg string, Type ...int) []byte {
