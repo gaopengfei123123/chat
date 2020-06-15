@@ -46,7 +46,7 @@ func tmpUser() userModel {
 		os.Exit(1)
 	}
 	name := input[:len(input)-1]
-	fmt.Printf("Hello %s! What can I do for you?\n", name)
+	fmt.Printf("Hello %s! 输入消息后按空格发送\n", name)
 
 	u := userModel{
 		Name: name,
@@ -108,17 +108,25 @@ func output(conn *websocket.Conn) {
 		}
 		var msg service.Message
 		json.Unmarshal(message, &msg)
-		// log.Printf("\n \n 接收到消息: %#+v \n \n", msg)
+		log.Printf("\n \n 接收到消息: %#+v \n \n", msg)
+
+		var n interface{}
+		if msg.Ext == nil {
+			n = "匿名"
+		} else {
+			n = msg.Ext["name"]
+		}
+		name := n.(string)
 
 		switch msg.Type {
 		case service.SystemMessage:
 			log.Printf("系统广播 %v\n", msg.Content)
 		case service.BroadcastMessage:
-			log.Printf("%s 说: %s \n", msg.From, msg.Content)
+			log.Printf("%s 说: %s \n", name, msg.Content)
 		case service.ConnectedMessage:
-			log.Printf("%s  上线\n", msg.From)
+			log.Printf("%s  上线\n", name)
 		case service.DisconnectedMessage:
-			log.Printf("%s  下线\n", msg.From)
+			log.Printf("%s  下线\n", name)
 		case service.HeartBeatMessage:
 			msg := buildMsg("", service.HeartBeatMessage)
 			// log.Println("heartBeat ack")

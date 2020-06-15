@@ -20,6 +20,7 @@ func init() {
 
 // ServerStar 启动
 func ServerStar() {
+	config.Parse()
 	gentleExit()
 	service.Start()
 	mux := Routes()

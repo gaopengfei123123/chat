@@ -98,6 +98,9 @@ func (cli *Client) DispatchRequest(msg Message) (err error) {
 		err = dispatcher.BroadcastEvent(msg, cli)
 	case HeartBeatMessage:
 		err = dispatcher.HeartBeatEvent(msg, cli)
+	case RegisterMessage:
+		cli.BindUser(msg)
+		err = dispatcher.RegisterEvent(cli)
 	case DirectMessage:
 		err = cli.SendToClient(msg)
 	default:
@@ -105,6 +108,18 @@ func (cli *Client) DispatchRequest(msg Message) (err error) {
 		err = dispatcher.DefaultMessageEvent(msg.Type, msg, cli)
 	}
 	return
+}
+
+// BindUser 绑定user和cli的关系, 因为没有真实的用户系统, 就拿链接id当做uid了
+func (cli *Client) BindUser(msg Message) {
+	n := msg.Ext["name"]
+	name := n.(string)
+	var key interface{}
+	key = "uid"
+	cli.Ctx = context.WithValue(cli.Ctx, key, cli.ID)
+
+	user := NewUserModel(cli.ID, name)
+	GetUserList().AddUser(user)
 }
 
 // SendToClient 消息发送到指定client
@@ -160,6 +175,18 @@ func (cli *Client) SendMessage(messageType int, message string) error {
 // SendText 发送文本类消息
 func (cli *Client) SendText(msg Message) error {
 	msg.SentAt = time.Now().Unix()
+
+	user, err := GetUserList().GetUser(msg.From)
+	if err != nil {
+		return err
+	}
+
+	if msg.Ext == nil {
+		msg.Ext = make(map[string]interface{})
+	}
+
+	msg.Ext["name"] = user.Name
+
 	return cli.conn.WriteJSON(msg)
 }
 

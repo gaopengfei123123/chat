@@ -15,5 +15,10 @@ var HeartbeatInterval = 30 * time.Second
 var MaxRetryTime = 2
 
 func init() {
+	// flag.Parse()
+}
+
+// Parse 解析命令行参数
+func Parse() {
 	flag.Parse()
 }

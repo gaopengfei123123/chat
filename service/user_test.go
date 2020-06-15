@@ -1,4 +1,4 @@
-package chat
+package service
 
 import (
 	"fmt"
@@ -33,12 +33,19 @@ func TestUserList(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		id := fmt.Sprintf("test_id_%d", i)
-		modelList[id] = &UserModel{
+		user := &UserModel{
 			ID:   id,
 			Name: fmt.Sprintf("test_name_%d", i),
 		}
 
+		err := UserList.AddUser(user)
+		if err != nil {
+			t.Error(err)
+		}
+
 	}
-	fmt.Printf("modelList: %v \n", modelList)
-	fmt.Println(modelList[`test_id_0`])
+	fmt.Printf("UserList: %#+v \n", UserList.IDList())
+
+	user, err := UserList.GetUser("test_id_0")
+	fmt.Printf("User: %v, err: %v \n", user, err)
 }

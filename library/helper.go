@@ -1,6 +1,7 @@
 package library
 
 import (
+	"hash/crc32"
 	"math/rand"
 	"strings"
 )
@@ -20,4 +21,17 @@ func RandSeq(n int) string {
 func Trim(str string) string {
 	str = strings.Trim(str, "\n")
 	return strings.Trim(str, " ")
+}
+
+// HashStr2Int 将字符串转换成一串唯一编码
+func HashStr2Int(s string) (code int) {
+	code = int(crc32.ChecksumIEEE([]byte(s)))
+	if code >= 0 {
+		return
+	}
+	if -code >= 0 {
+		return -code
+	}
+	// v == MinInt
+	return
 }
