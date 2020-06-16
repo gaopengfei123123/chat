@@ -12,7 +12,7 @@ func Routes() *http.ServeMux {
 	})
 	// websocket 监听接口
 	mux.HandleFunc("/ws", SocketServer)
-	// 服务状态接口
+	// 服务状态接口, 观察一下消息积攒情况
 	mux.HandleFunc("/status", SocketStatus)
 	return mux
 }
