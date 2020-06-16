@@ -46,7 +46,7 @@ func tmpUser() userModel {
 		os.Exit(1)
 	}
 	name := input[:len(input)-1]
-	fmt.Printf("Hello %s! 输入消息后按空格发送\n", name)
+	fmt.Printf("Hello %s! 输入消息后按回车发送\n", name)
 
 	u := userModel{
 		Name: name,
@@ -108,7 +108,7 @@ func output(conn *websocket.Conn) {
 		}
 		var msg service.Message
 		json.Unmarshal(message, &msg)
-		log.Printf("\n \n 接收到消息: %#+v \n \n", msg)
+		// log.Printf("\n \n 接收到消息: %#+v \n \n", msg)
 
 		var n interface{}
 		if msg.Ext == nil {

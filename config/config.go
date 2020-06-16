@@ -14,10 +14,6 @@ var HeartbeatInterval = 30 * time.Second
 // MaxRetryTime 心跳重试次数
 var MaxRetryTime = 2
 
-func init() {
-	// flag.Parse()
-}
-
 // Parse 解析命令行参数
 func Parse() {
 	flag.Parse()

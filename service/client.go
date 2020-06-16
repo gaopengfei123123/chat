@@ -1,3 +1,4 @@
+// Package service 是关于单个链接的消息收发操作, 实际上这个也是发生在server端的
 package service
 
 import (

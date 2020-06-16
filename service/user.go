@@ -1,4 +1,4 @@
-// Package service 这里写注册逻辑 业务id和链接id绑定
+// Package service 维护在线用户逻辑 业务id和链接id绑定
 package service
 
 import (
